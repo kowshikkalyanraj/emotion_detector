@@ -8,71 +8,23 @@
 </head>
 <body>
     <div class="container">
-        <h1>Smart Mental Health Companion</h1>
-        
+        <h1>🌸 Smart Mental Health Companion 🌸</h1>
+
         <div id="chat-box"></div>
 
         <div class="input-area">
-            <input type="text" id="question" placeholder="Type your message here..." autofocus>
-            <button id="sendBtn">Send</button>
+            <input type="text" id="user-input" placeholder="Type your message..." />
+            <button onclick="sendMessage()">Send</button>
+            <button onclick="startVoice()">🎤</button>
         </div>
 
         <div class="emotion-section">
-            <h2>Emotion Detection</h2>
-            <button id="detectBtn">Detect Emotion</button>
+            <h3>😊 Emotion Detection</h3>
+            <button id="detect-emotion">Detect Emotion</button>
+            <p id="emotion-quote"></p>
         </div>
     </div>
 
-    <script>
-        async function sendMessage() {
-            const input = document.getElementById("question");
-            const message = input.value.trim();
-            const chatBox = document.getElementById("chat-box");
-
-            if (!message) return;
-
-            // Display user message
-            const userMsg = document.createElement("p");
-            userMsg.className = "user";
-            userMsg.textContent = message;
-            chatBox.appendChild(userMsg);
-
-            input.value = "";
-
-            // Send to backend
-            try {
-                const res = await fetch("/ask", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: `question=${encodeURIComponent(message)}`
-                });
-                const data = await res.json();
-
-                // Display AI reply
-                const aiMsg = document.createElement("p");
-                aiMsg.className = "ai";
-                aiMsg.textContent = data.answer;
-                chatBox.appendChild(aiMsg);
-                chatBox.scrollTop = chatBox.scrollHeight;
-
-            } catch (err) {
-                const errorMsg = document.createElement("p");
-                errorMsg.className = "ai error";
-                errorMsg.textContent = "⚠️ Something went wrong. Please try again.";
-                chatBox.appendChild(errorMsg);
-            }
-        }
-
-        document.getElementById("sendBtn").addEventListener("click", sendMessage);
-        document.getElementById("question").addEventListener("keypress", function(e) {
-            if (e.key === "Enter") sendMessage();
-        });
-
-        document.getElementById("detectBtn").addEventListener("click", async () => {
-            const res = await fetch("/detect_emotion");
-            const data = await res.json();
-            alert(data.quote || data.error || "Emotion detection complete!");
-        });
-    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

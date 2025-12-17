@@ -72,3 +72,14 @@ button:hover {
     border-radius: 10px;
     margin: 5px 0;
 }
+
+.emotion-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+video {
+    margin-top: 10px;
+    width: 100%;
+    border-radius: 10px;
+}

@@ -1,43 +1,80 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const chatBox = document.getElementById("chat-box");
-    const sendBtn = document.getElementById("send-btn");
-    const userInput = document.getElementById("user-input");
+// ✅ Emotion Detection (with 5-second camera capture + countdown)
+const video = document.createElement("video");
+video.autoplay = true;
+video.width = 400;
+video.height = 300;
+video.style.borderRadius = "10px";
+video.style.display = "none"; // hidden until start
+document.querySelector(".emotion-section").appendChild(video);
 
-    function appendMessage(message, sender) {
-        const msgDiv = document.createElement("div");
-        msgDiv.classList.add("message", sender);
-        msgDiv.textContent = message;
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
+const emotionQuote = document.getElementById("emotion-quote");
+const detectBtn = document.getElementById("detect-emotion");
 
-    async function sendMessage() {
-        const text = userInput.value.trim();
-        if (!text) return;
+const countdownText = document.createElement("h4");
+countdownText.style.color = "#007bff";
+countdownText.style.fontSize = "18px";
+countdownText.style.marginTop = "10px";
+document.querySelector(".emotion-section").appendChild(countdownText);
 
-        appendMessage(text, "user");
-        userInput.value = "";
+detectBtn.addEventListener("click", async () => {
+    try {
+        detectBtn.textContent = "Detecting...";
+        detectBtn.disabled = true;
+        emotionQuote.textContent = "😊 Please look at the camera...";
+        countdownText.textContent = "";
 
-        try {
-            const response = await fetch("/chat", {
+        // Access camera
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.style.display = "block";
+
+        // Countdown from 5 seconds
+        let timeLeft = 5;
+        countdownText.textContent = `Capturing in ${timeLeft}...`;
+        const countdownInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft > 0) {
+                countdownText.textContent = `Capturing in ${timeLeft}...`;
+            } else {
+                clearInterval(countdownInterval);
+                countdownText.textContent = "Capturing now...";
+            }
+        }, 1000);
+
+        // Capture frame after 5 seconds
+        setTimeout(async () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL("image/jpeg");
+
+            // Stop camera
+            stream.getTracks().forEach(track => track.stop());
+            video.style.display = "none";
+
+            // Send to backend
+            const response = await fetch("/detect_emotion", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({ image: imageData })
             });
 
             const data = await response.json();
-            if (data.bot_response) {
-                appendMessage(data.bot_response, "bot");
-            } else {
-                appendMessage("Something went wrong!", "bot");
-            }
-        } catch (error) {
-            appendMessage("Error connecting to server!", "bot");
-        }
-    }
+            emotionQuote.textContent = `Detected Emotion: ${data.emotion.toUpperCase()} 💫\n${data.quote}`;
+            countdownText.textContent = "";
+            detectBtn.textContent = "Detect Emotion";
+            detectBtn.disabled = false;
 
-    sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") sendMessage();
-    });
+        }, 5000); // 5 seconds delay
+
+    } catch (err) {
+        console.error("Camera error:", err);
+        emotionQuote.textContent = "⚠️ Unable to access camera.";
+        detectBtn.textContent = "Detect Emotion";
+        detectBtn.disabled = false;
+        countdownText.textContent = "";
+    }
 });
